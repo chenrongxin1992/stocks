@@ -27,10 +27,14 @@ function fetchCodeArr(callback){
 			let get_code_url = domain + '/market/rzrq/'
 			logger.info('获取code页面链接-->',get_code_url)
 
-			request(get_code_url,function(err,response,body){
+			request({url:get_code_url, timeout:30000},function(err,response,body){
 				if(err){
 					logger.error('---------------------- get_code_url err ----------------------')
 					logger.error(err)
+					logger.error(err.code === 'ETIMEDOUT');
+					    // Set to `true` if the timeout was a connection timeout, `false` or
+					    // `undefined` otherwise.
+					    logger.error(err.connect === true);
 					cb(err)
 				}
 				if (!err && response.statusCode == 200) {
@@ -57,13 +61,17 @@ function fetchCodeArr(callback){
 			async.eachLimit(code_url_arr,1,function(item,cbb){
 				logger.info('当前爬取链接-->',item)
 				
-				request(item,function(err,response,body){
+				request({url:item, timeout:30000},function(err,response,body){
 					//logger.info(err)
 					//logger.info(response.status)
 					//logger.info(body)
 					if(err){
 						logger.error('---------------------- get_code_url err ----------------------')
 						logger.error(err)
+						logger.error(err.code === 'ETIMEDOUT');
+					    // Set to `true` if the timeout was a connection timeout, `false` or
+					    // `undefined` otherwise.
+					    logger.error(err.connect === true);
 						cbb(err)
 					}
 					if(!err && response.statusCode == 200){
@@ -79,7 +87,8 @@ function fetchCodeArr(callback){
 							logger.info('总的td数-->',tbody_tr_td_length)
 							logger.info('--------------------------- what happen ---------------------------')
 							tbody_tr_td.each(function(i,it){
-								switch(i%13){
+								let temp_i = i%13
+								switch(temp_i){
 									case 0:
 										//logger.info(it)
 										temp_obj.xh = it.children[0].data
@@ -147,6 +156,7 @@ function fetchCodeArr(callback){
 			return callback(error)
 		}
 		console.timeEnd('获取code总耗时---->')
+		logger.info('code 总数--->',result.length)
 		return callback(null,result)
 	})
 }
@@ -163,11 +173,15 @@ function fetchData(code,callback){
 			//let url = 'http://data.10jqka.com.cn/market/rzrqgg/code/601318/'
 			let url = domain + '/market/rzrqgg/code/' + code + '/'
 			logger.info('获取页面链接-->',url)
-			request(url,function(err,response,body){
+			request({url:url, timeout:30000},function(err,response,body){
 				if(err){
 						logger.error('----- 获取页数失败 -----')
 						//logger.info('状态码-->',response.status)
 						logger.error(err)
+						logger.error(err.code === 'ETIMEDOUT');
+					    // Set to `true` if the timeout was a connection timeout, `false` or
+					    // `undefined` otherwise.
+					    logger.error(err.connect === true);
 						cb(err)
 					}
 				if(!err && response.statusCode == 200){
@@ -194,13 +208,17 @@ function fetchData(code,callback){
 			console.time('获取数据耗时---->')
 			//console.time('抓取数据耗时-->')
 			async.eachLimit(arg,10,function(item,cbb){
-				logger.info('当前爬取-->',item)
-				request(item,function(err,response,body){
+				logger.info('当前爬取-->',item)//{url:item, timeout:30000}
+				request({url:item, timeout:30000},function(err,response,body){
 					if(err){
 							logger.error('--------------------------- 抓取时错误 ----------------------------')
 							//logger.info('状态码-->',response.statusCode)
 							logger.error(err)
 							fail_url_arr.push(item)
+							logger.error(err.code === 'ETIMEDOUT');
+						    // Set to `true` if the timeout was a connection timeout, `false` or
+						    // `undefined` otherwise.
+						    logger.error(err.connect === true);
 							cbb(null)
 							//cbb(err)
 						}
@@ -216,10 +234,9 @@ function fetchData(code,callback){
 								tbody_tr_td_length = tbody_tr_td.length
 							logger.info('总的td数-->',tbody_tr_td_length)
 
-							//let res_arr = new Array(),
-							//	temp_obj = {}
 							tbody_tr_td.each(function(i,it){
-								switch(i%11){
+								let temp_i = i%11
+								switch(temp_i){
 									case 0:
 										//logger.info(it)
 										temp_obj.xh = it.children[0].data
@@ -273,91 +290,6 @@ function fetchData(code,callback){
 			})
 		},
 		function(arg,cb){
-			logger.info('----------------------- 爬取第一次失败链接 -------------------------')
-			console.time('获取第一次失败链接数据耗时---->')
-			logger.info('第一次失败链接数---->',fail_url_arr.length)
-			async.eachLimit(fail_url_arr,10,function(item,cbb){
-				logger.info('当前爬取-->',item)
-				request(item,function(err,response,body){
-					if(err){
-							logger.error('--------------------------- 抓取时错误 ----------------------------')
-							//logger.info('状态码-->',response.statusCode)
-							logger.error(err)
-							fail_url_arr_sec.push(item)
-							cbb(null)
-							//cbb(err)
-						}
-						if(!err && response.statusCode == 200){
-							let str = iconv.decode(body, 'GBK')
-							let $ = cheerio.load(str)
-							//获取所有的 tbody tr
-							let tbody_tr = $('tbody').find('tr'),
-								tbody_tr_length = tbody_tr.length
-							logger.info('本页记录条数-->',tbody_tr_length)
-
-							let tbody_tr_td = $('tbody').find('tr').children('td'),
-								tbody_tr_td_length = tbody_tr_td.length
-							logger.info('总的td数-->',tbody_tr_td_length)
-
-							//let res_arr = new Array(),
-							//	temp_obj = {}
-							tbody_tr_td.each(function(i,it){
-								switch(i%11){
-									case 0:
-										//logger.info(it)
-										temp_obj.xh = it.children[0].data
-										break
-									case 1:
-										temp_obj.jysj = it.children[0].data.trim()
-										break
-									case 2:
-										temp_obj.rzye = it.children[0].data.trim()
-										break
-									case 3:
-										temp_obj.rzmr = it.children[0].data.trim()
-										break
-									case 4:
-										temp_obj.rzch = it.children[0].data.trim()
-										break
-									case 5:
-										temp_obj.rzjmr = it.children[0].data.trim()
-										break
-									case 6:
-										temp_obj.rqyl = it.children[0].data
-										break
-									case 7:
-										temp_obj.rqmc = it.children[0].data
-										break
-									case 8:
-										temp_obj.rqch = it.children[0].data
-										break
-									case 9:
-										temp_obj.rqjmc = it.children[0].data
-										break
-									case 10:
-										temp_obj.rzrqye = it.children[0].data.trim()
-										arg.push(temp_obj)
-										temp_obj = {}
-										break
-								}
-							})
-							zongshu = zongshu + 1
-							cbb(null)
-						}
-				})
-			},function(error){
-				if(error){
-					logger.error('----- eachLimit error -----')
-					logger.error(error)
-					cb(error)
-				}
-				logger.info('第二次失败链接---->',fail_url_arr_sec.length,fail_url_arr_sec)
-				console.timeEnd('获取第一次失败链接数据耗时---->')
-				//console.timeEnd('抓取数据耗时-->')
-				cb(null,arg)
-			})
-		},
-		function(arg,cb){
 			let search = rzrq.find({code:code})
 				search.exec(function(err,docs){
 					if(err){
@@ -379,7 +311,8 @@ function fetchData(code,callback){
 		},
 		function(arg,cb){
 			logger.info('数据记录数-->',arg.length)
-			async.eachLimit(arg,500,function(item,cbbb){
+			logger.info('count_fetch_url-->',count_fetch_url)
+			async.eachLimit(arg,50,function(item,cbbb){
 				let insert_rzrq = new rzrq({
 					code : code,
 					xh : item.xh,
@@ -400,6 +333,7 @@ function fetchData(code,callback){
 						logger.error(err)
 						cbbb(err)
 					}
+					//logger.info('count_fetch_url-->save',count_fetch_url)
 					cbbb(null)
 				})
 			},function(err){
@@ -407,6 +341,7 @@ function fetchData(code,callback){
 					logger.error('----- eachLimit save err -----')
 					cb(err)
 				}
+				logger.info('count_fetch_url-->eachLimit save',count_fetch_url)
 				cb(null,arg)
 			})
 		}
@@ -427,7 +362,7 @@ function fetchData(code,callback){
     可以看到，函数名中有each的是没有结果集的，函数明名map是有结果集的；
 也可以看到,函数都是只要iterator返回err就立即调用callback返回。
 并且其内部有控制过，callback只会被调用一次，如果你发现被回调了多次，那么这一定是一个bug，可以向作者反馈。*/
-
+var count_fetch_url = 0
 exports.execFetchData = function (){
 	console.time('execFetchData costs time ----------------------------->')
 	async.waterfall([
@@ -445,7 +380,7 @@ exports.execFetchData = function (){
 		function(arg,cb){
 			let date = new Date(2017,10,11,13,08,00);
 
-			schedule.scheduleJob('50 13 * * *', function(){  //每天九点11分
+			schedule.scheduleJob('41 08 * * *', function(){  //每天九点11分
 				async.eachLimit(arg,10,function(item,cbb){
 					//console.time('time')
 					fetchData(item.code,function(er,re){
@@ -453,6 +388,7 @@ exports.execFetchData = function (){
 							logger.error('----- 调用fetchdata err ------')
 							cbb(er)
 						}
+						count_fetch_url++
 						cbb(null)
 					})
 				},function(err){
@@ -473,8 +409,10 @@ exports.execFetchData = function (){
 			logger.error(error)
 		}
 		logger.info('------------------------------ async done -------------------------------')
+		logger.info('count_fetch_url-->',count_fetch_url)
 		logger.info('zongshu-->',zongshu)
-		logger.info('最终失败链接--->',fail_url_arr_sec)
+		logger.info('第一次失败链接--->',fail_url_arr.length,fail_url_arr)
+		//logger.info('最终失败链接--->',fail_url_arr_sec)
 	})
 	console.timeEnd('execFetchData costs time ----------------------------->')
 }
