@@ -49,6 +49,6 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-logic.execFetchData() //爬取数据
+//logic.execFetchData() //爬取数据
 
 module.exports = app;

@@ -11,6 +11,7 @@ const logger = require('../log/logConfig').logger
 const rzrq = require('../db/rzrq')
 
 var zongshu = 0,
+	record_num = 0,
 	fail_url_arr = [],
 	fail_url_arr_sec = []
 
@@ -58,7 +59,7 @@ function fetchCodeArr(callback){
 			})
 		},
 		function(code_url_arr,cb){
-			async.eachLimit(code_url_arr,1,function(item,cbb){
+			async.mapLimit(code_url_arr,10,function(item,cbb){
 				logger.info('当前爬取链接-->',item)
 				
 				request({url:item, timeout:30000},function(err,response,body){
@@ -131,13 +132,16 @@ function fetchCodeArr(callback){
 										code_arr.push(temp_obj)
 										temp_obj = {}
 										break
+                                    default:
+                                        logger.info('-------- in default --------')
+                                        code_arr.push(temp_obj)
+                                        temp_obj = {}
 								}
 							})
 							logger.info('--------------------------- what happen ---------------------------')
 							logger.info('code_arr length ------------------------------>',code_arr.length)
 							cbb()
 						}
-
 				})
 			},function(err){
 				if(err){
@@ -162,6 +166,7 @@ function fetchCodeArr(callback){
 }
 
 function fetchData(code,callback){
+	logger.info('code--->',code)
 	console.time('获取数据总耗时---->')
 	let res_arr = new Array(),
 		temp_obj = {}
@@ -207,7 +212,7 @@ function fetchData(code,callback){
 		function(arg,cb){
 			console.time('获取数据耗时---->')
 			//console.time('抓取数据耗时-->')
-			async.eachLimit(arg,10,function(item,cbb){
+			async.eachLimit(arg,2,function(item,cbb){
 				logger.info('当前爬取-->',item)//{url:item, timeout:30000}
 				request({url:item, timeout:30000},function(err,response,body){
 					if(err){
@@ -235,6 +240,7 @@ function fetchData(code,callback){
 							logger.info('总的td数-->',tbody_tr_td_length)
 
 							tbody_tr_td.each(function(i,it){
+								logger.info('----- 进来了没有 -----')
 								let temp_i = i%11
 								switch(temp_i){
 									case 0:
@@ -272,7 +278,12 @@ function fetchData(code,callback){
 										temp_obj.rzrqye = it.children[0].data.trim()
 										res_arr.push(temp_obj)
 										temp_obj = {}
+										record_num++
 										break
+									default:
+										logger.info('-------- in default --------')
+                                        res_arr.push(temp_obj)
+                                        temp_obj = {}
 								}
 							})
 							zongshu = zongshu + 1
@@ -353,7 +364,7 @@ function fetchData(code,callback){
 		}
 		//logger.info('爬取结果-->',result)
 		//return callback(result)
-		console.time('获取数据总耗时---->')
+		//console.time('获取数据总耗时---->')
 		return callback(null)
 	})
 }
@@ -367,6 +378,8 @@ exports.execFetchData = function (){
 	console.time('execFetchData costs time ----------------------------->')
 	async.waterfall([
 		function(cb){
+            // let temp_arr = [{code:'000063'}]
+			// cb(null,temp_arr)
 			console.time('get code_arr costs time ------------------------>')
 			fetchCodeArr(function(err,res){
 				if(err){
@@ -380,10 +393,11 @@ exports.execFetchData = function (){
 		function(arg,cb){
 			let date = new Date(2017,10,11,13,08,00);
 
-			schedule.scheduleJob('41 08 * * *', function(){  //每天九点11分
-				async.eachLimit(arg,10,function(item,cbb){
+			//schedule.scheduleJob('07 10 * * *', function(){  //每天九点11分
+				async.eachLimit(arg,2,function(item,cbb){
 					//console.time('time')
 					fetchData(item.code,function(er,re){
+
 						if(er){
 							logger.error('----- 调用fetchdata err ------')
 							cbb(er)
@@ -401,7 +415,7 @@ exports.execFetchData = function (){
 					logger.info('----------------------------- each code arr end -----------------------------')
 					cb(null)
 				})
-			}); 
+			//});
 		}
 	],function(error,result){
 		if(error){
@@ -413,8 +427,8 @@ exports.execFetchData = function (){
 		logger.info('zongshu-->',zongshu)
 		logger.info('第一次失败链接--->',fail_url_arr.length,fail_url_arr)
 		//logger.info('最终失败链接--->',fail_url_arr_sec)
+        console.timeEnd('execFetchData costs time ----------------------------->')
 	})
-	console.timeEnd('execFetchData costs time ----------------------------->')
 }
 
 exports.rongzi = function(callback){
@@ -478,7 +492,6 @@ exports.rongzi = function(callback){
 							let tbody_tr_td = $('tbody').find('tr').children('td'),
 								tbody_tr_td_length = tbody_tr_td.length
 							logger.debug('总的td数-->',tbody_tr_td_length)
-							logger.debug('--------------------------- what happen ---------------------------')
 							//let res_arr = new Array(),
 							//	temp_obj = {}
 							tbody_tr_td.each(function(i,it){
@@ -521,7 +534,6 @@ exports.rongzi = function(callback){
 										break
 								}
 							})
-							logger.debug('--------------------------- what happen ---------------------------')
 							cbb(null)
 						}
 					})
@@ -637,4 +649,40 @@ exports.getRzrqData = function(callback){
 			logger.info(docs)
 			callback(null,docs)
 		})
+}
+
+//获取rzrq数据 param::code
+exports.getRzrqCode = function (code,callback) {
+	let jysj_arr = new Array(),
+		rzmr_arr = new Array()
+	let search = rzrq.find({'code':code})
+		search.sort({'jysj':1})
+		search.exec(function (err,doc) {
+			if(err){
+				logger.info('search err code')
+				callback(err)
+			}
+			if(doc && doc.length != 0){
+				for(let k in doc){
+                    jysj_arr.push(doc[k].jysj)
+					//console.log('parseInt(doc[k].rzmr)', )
+					let temp = Number((doc[k].rzmr).toString().match(/^\d+(?:\.\d{0,2})?/))
+					if(temp < 10000){
+                        rzmr_arr.push(temp*10000)
+					}
+					else{
+                        rzmr_arr.push(temp)
+					}
+				}
+				doc = {}
+				doc.jysj_arr = jysj_arr
+				doc.rzmr_arr = rzmr_arr
+                //logger.info('doc ---> ',doc)
+				callback(null,doc)
+			}
+			if(!doc || doc.length == 0){
+				logger.info('doc is null code')
+				callback(null,null)
+			}
+        })
 }

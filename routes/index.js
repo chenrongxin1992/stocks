@@ -26,4 +26,15 @@ router.get('/rzrq',function(req,res){
 	})
 })
 
+router.post('/rzrq',function (req,res) {
+	let code = req.body.code
+	logic.getRzrqCode(code,function (error,result) {
+		if(error){
+			console.log('-------------------------- rzrq router error post -----------------------------')
+			res.json({'errCode':-1,'errMsg':error})
+		}
+		res.json({'errCode':0,'result':result})
+    })
+})
+
 module.exports = router;
