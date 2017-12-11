@@ -86,7 +86,7 @@ function fetchCodeArr(callback){
 							let tbody_tr_td = $('tbody').find('tr').children('td'),
 								tbody_tr_td_length = tbody_tr_td.length
 							logger.info('总的td数-->',tbody_tr_td_length)
-							logger.info('--------------------------- what happen ---------------------------')
+							//logger.info('--------------------------- what happen ---------------------------')
 							tbody_tr_td.each(function(i,it){
 								let temp_i = i%13
 								switch(temp_i){
@@ -240,7 +240,7 @@ function fetchData(code,callback){
 							logger.info('总的td数-->',tbody_tr_td_length)
 
 							tbody_tr_td.each(function(i,it){
-								logger.info('----- 进来了没有 -----')
+								//logger.info('----- 进来了没有 -----')
 								let temp_i = i%11
 								switch(temp_i){
 									case 0:
@@ -665,13 +665,19 @@ exports.getRzrqCode = function (code,callback) {
 			if(doc && doc.length != 0){
 				for(let k in doc){
                     jysj_arr.push(doc[k].jysj)
-					//console.log('parseInt(doc[k].rzmr)', )
+					console.log(parseFloat(doc[k].rzmr))
 					let temp = Number((doc[k].rzmr).toString().match(/^\d+(?:\.\d{0,2})?/))
-					if(temp < 10000){
-                        rzmr_arr.push(temp*10000)
+					if(parseFloat(temp) <= 10.00){//亿
+                        rzmr_arr.push(parseFloat(temp)*10000.00)
 					}
+					// else if(10.00 < parseFloat(temp) < 100.00){//十万
+                     //    rzmr_arr.push(parseFloat(temp)*1000.00)
+					// }
+					// else if(100.00 < parseFloat(temp) < 1000.00){
+                     //    rzmr_arr.push(parseFloat(temp)*100.00)
+					// }
 					else{
-                        rzmr_arr.push(temp)
+                        rzmr_arr.push(parseFloat(temp))
 					}
 				}
 				doc = {}

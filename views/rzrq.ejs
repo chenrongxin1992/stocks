@@ -22,7 +22,7 @@
     	<div class="row-fluid">
     			<% result.forEach(function(item){ %>
 					<div class="col-lg-1 col-md-1 col-sm-1 col-xs-3">
-					  	<button class="btn btn-success" style="margin:5px 0;" value="<%=item%>"><%=item%></button>
+					  	<button class="btn btn-success" style="margin:5px 0;" id="<%=item%>" value="<%=item%>" data-toggle="popover" data-placement="bottom"  data-trigger="focus" title="<%=item%>" data-content=''><%=item%></button>
 					</div>
 				<% }) %>
     	</div>
@@ -32,10 +32,16 @@
     <!--<button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bs-example-modal-lg">Large modal</button>-->
 
     <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" id="line-modal">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog " role="document">
             <div class="modal-content">
-                <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
-                <div id="main" style="width: 800px;height:600px;"></div>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel"></h4>
+                </div>
+                <div class="modal-body text-center">
+                    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+                    <div id="main" style="width: 580px;height:400px;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -49,7 +55,11 @@
         $(function () {
             $('.btn').on('click',function () {
                 console.log('click btn')
-                let code = $('.btn').val()
+                let id = $(this).attr('id'),
+                    data_content = $(this).attr('data-content')
+                console.log('id--->',id)
+                console.log('data_content--->',data_content)
+                let code = $(this).val()
                 console.log('check code--->',code)
                 $.ajax({
                     url:'/rzrq',
@@ -64,6 +74,7 @@
                             console.log(result.result.rzmr_arr)
                             // 基于准备好的dom，初始化echarts实例
                             let myChart = echarts.init(document.getElementById('main'));
+                            console.log(myChart)
                             //let myChart = echarts.init();
 
                             // 指定图表的配置项和数据
@@ -75,8 +86,8 @@
                                     }
                                 },
                                 title: {
-                                    left: 'center',
-                                    text: '大数据量面积图',
+                                    left: 'left',
+                                    text: 'rzmr',
                                 },
                                 toolbox: {
                                     feature: {
@@ -98,8 +109,8 @@
                                 },
                                 dataZoom: [{
                                     type: 'inside',
-                                    start: 0,
-                                    end: 10
+                                    start: 95,
+                                    end: 100
                                 }, {
                                     start: 0,
                                     end: 10,
@@ -141,11 +152,9 @@
 
                             // 使用刚指定的配置项和数据显示图表。
                             myChart.setOption(option);
-
+                            $('#gridSystemModalLabel').text(id)
                             $('#line-modal').modal('show')
-                            //$('#line-modal').text(result.errMsg)
-                            //location.href = '/manage/login';
-                            //location.href = '/manage/approve';
+
                         }
                         if(result.errCode == -1){
                             console.log('fail')
@@ -158,6 +167,16 @@
                     }
                 })
             })
+            $("#line-modal").on("hidden.bs.modal", function() {
+                console.log('---- here ----')
+                //$(this).removeData("bs.modal");
+                //$(".modal-content").empty();
+                //$("#main").empty();
+                console.log('----- clear modal window -----')
+                //$(".modal-body").remove()
+                //console.log('----- clear again -----')
+            });
+
         })
 
     </script>

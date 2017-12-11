@@ -7,7 +7,7 @@
           "type": "file",
           "filename": "log/info_log",
           "encoding": "utf-8",
-          "maxLogSize": 1048000,
+          "maxLogSize": 5048000,
           "numBackups": 9,
           "pattern": "yyyy-MM-dd.log",
           "alwaysIncludePattern": true
@@ -16,8 +16,8 @@
       "categories": {
         "default": {
           "appenders": [
-            "rule-console",
-            "rule-error"
+            "rule-error",
+            "rule-console"
           ],
           "level": "debug",
           "replaceConsole":true
